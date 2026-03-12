@@ -936,93 +936,99 @@ function generateId() {
 }
 
 async function addModuleFromFolder() {
-  if (!('showDirectoryPicker' in window)) {
-    toast('Your browser doesn\'t support the folder picker API', 'error');
-    return;
-  }
+  // Use a hidden file input with webkitdirectory — works on all Chrome including ChromeOS
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.webkitdirectory = true;
+  input.multiple = true;
 
-  try {
-    const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
-    const files = {};
-    let manifest = null;
+  input.addEventListener('change', async () => {
+    if (!input.files || input.files.length === 0) return;
 
-    // Read all files recursively
-    await readDirectory(dirHandle, '', files);
+    try {
+      const files = {};
+      let folderName = '';
 
-    // Look for module.json
-    if (files['module.json']) {
-      try {
-        manifest = JSON.parse(files['module.json'].text);
-      } catch (e) {
-        toast('Invalid module.json', 'error');
-        return;
+      // Process all files from the directory
+      for (const file of input.files) {
+        // webkitRelativePath gives us "folderName/path/to/file.ext"
+        const relPath = file.webkitRelativePath;
+        // Extract the folder name from the first segment
+        const parts = relPath.split('/');
+        if (!folderName) folderName = parts[0];
+        // Get path relative to the folder root
+        const innerPath = parts.slice(1).join('/');
+        if (!innerPath) continue;
+
+        const text = await file.text();
+        const isBinary = /\.(wasm|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|bin|dat|zip|mp3|wav|mp4|webm)$/i.test(file.name);
+
+        files[innerPath] = {
+          text,
+          content: isBinary ? await file.arrayBuffer() : text,
+          type: file.type || 'application/octet-stream',
+        };
       }
-    }
 
-    // If no manifest, create a basic one
-    if (!manifest) {
-      const hasIndex = files['index.html'];
-      if (!hasIndex) {
-        toast('No index.html or module.json found', 'error');
-        return;
+      let manifest = null;
+
+      // Look for module.json
+      if (files['module.json']) {
+        try {
+          manifest = JSON.parse(files['module.json'].text);
+        } catch (e) {
+          toast('Invalid module.json', 'error');
+          return;
+        }
       }
-      manifest = {
-        name: dirHandle.name,
-        entry: 'index.html',
-        description: 'Imported module',
-        headers: {},
-        permissions: {},
-        network: {},
-        storage: { quota: '100MB' }
-      };
-    }
 
-    const id = generateId();
-    manifest._id = id;
-    manifest._fileList = Object.keys(files);
-    manifest._icon = manifest.icon || '📦';
-    modules[id] = manifest;
+      // If no manifest, create a basic one
+      if (!manifest) {
+        const hasIndex = files['index.html'];
+        if (!hasIndex) {
+          toast('No index.html or module.json found', 'error');
+          return;
+        }
+        manifest = {
+          name: folderName || 'Untitled Module',
+          entry: 'index.html',
+          description: 'Imported module',
+          headers: {},
+          permissions: {},
+          network: {},
+          storage: { quota: '100MB' }
+        };
+      }
 
-    // Send files to Service Worker
-    sendToSW('register-module', { id, config: manifest });
+      const id = generateId();
+      manifest._id = id;
+      manifest._fileList = Object.keys(files);
+      manifest._icon = manifest.icon || '📦';
+      modules[id] = manifest;
 
-    for (const [path, fileData] of Object.entries(files)) {
-      sendToSW('store-module-file', {
-        moduleId: id,
-        path,
-        data: fileData.content,
-        contentType: fileData.type,
-      });
-    }
+      // Send files to Service Worker
+      sendToSW('register-module', { id, config: manifest });
 
-    await saveVault();
-    renderModules();
-    toast(`"${manifest.name}" installed`, 'success');
-  } catch (e) {
-    if (e.name !== 'AbortError') {
+      for (const [path, fileData] of Object.entries(files)) {
+        sendToSW('store-module-file', {
+          moduleId: id,
+          path,
+          data: fileData.content,
+          contentType: fileData.type,
+        });
+      }
+
+      await saveVault();
+      renderModules();
+      toast(`"${manifest.name}" installed`, 'success');
+    } catch (e) {
       console.error(e);
       toast('Failed to import module', 'error');
     }
-  }
-}
+  });
 
-async function readDirectory(dirHandle, basePath, files) {
-  for await (const [name, handle] of dirHandle) {
-    const path = basePath ? `${basePath}/${name}` : name;
-    if (handle.kind === 'file') {
-      const file = await handle.getFile();
-      const text = await file.text();
-      // For binary files, store as ArrayBuffer
-      const isBinary = /\.(wasm|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|bin|dat|zip|mp3|wav|mp4|webm)$/i.test(name);
-      files[path] = {
-        text,
-        content: isBinary ? await file.arrayBuffer() : text,
-        type: file.type || 'application/octet-stream',
-      };
-    } else if (handle.kind === 'directory') {
-      await readDirectory(handle, path, files);
-    }
-  }
+  // Trigger the file picker
+  input.click();
 }
 
 function removeModule(id) {
