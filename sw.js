@@ -63,9 +63,14 @@ self.addEventListener('message', (event) => {
 // Fetch handler: intercept module requests and inject headers
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  const scope = new URL(self.registration.scope).pathname;
 
-  // Check if this request is for a module route: /module/{id}/...
-  const moduleMatch = url.pathname.match(/^\/module\/([^/]+)(\/.*)?$/);
+  // Check if this request is for a module route: {scope}module/{id}/...
+  const modulePath = url.pathname.startsWith(scope) 
+    ? url.pathname.slice(scope.length) 
+    : null;
+  
+  const moduleMatch = modulePath?.match(/^module\/([^/]+)(\/.*)?$/);
 
   if (moduleMatch) {
     const moduleId = moduleMatch[1];
