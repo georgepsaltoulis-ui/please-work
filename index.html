@@ -40,7 +40,6 @@
     overflow-x: hidden;
   }
 
-  /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -136,9 +135,7 @@
     box-shadow: 0 0 0 3px var(--accent-glow);
   }
 
-  .input-group input::placeholder {
-    color: var(--text-muted);
-  }
+  .input-group input::placeholder { color: var(--text-muted); }
 
   .btn {
     display: inline-flex;
@@ -174,14 +171,6 @@
 
   .btn-secondary:hover { background: var(--bg-card-hover); border-color: var(--border-focus); }
 
-  .btn-danger {
-    background: rgba(248,113,113,0.1);
-    color: var(--danger);
-    border: 1px solid rgba(248,113,113,0.2);
-  }
-
-  .btn-danger:hover { background: rgba(248,113,113,0.2); }
-
   .btn-sm { padding: 8px 14px; font-size: 13px; }
 
   .btn-icon {
@@ -214,7 +203,7 @@
     margin-top: 12px;
   }
 
-  /* ── Main App Layout ── */
+  /* ── Main App ── */
   .app { display: none; min-height: 100vh; }
   .app.active { display: block; }
 
@@ -230,11 +219,7 @@
     z-index: 100;
   }
 
-  .topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
 
   .topbar-logo {
     width: 32px;
@@ -253,7 +238,7 @@
     letter-spacing: -0.3px;
   }
 
-  .topbar-right { display: flex; gap: 8px; }
+  .topbar-right { display: flex; gap: 8px; align-items: center; }
 
   .main-content {
     max-width: 960px;
@@ -389,7 +374,7 @@
     margin-top: 0;
   }
 
-  /* ── Add Module Card ── */
+  /* ── Add Card ── */
   .add-card {
     border: 2px dashed var(--border);
     background: transparent;
@@ -472,10 +457,7 @@
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
-  .modal-header h2 {
-    font-size: 16px;
-    font-weight: 700;
-  }
+  .modal-header h2 { font-size: 16px; font-weight: 700; }
 
   .modal-body { padding: 24px; }
 
@@ -512,16 +494,9 @@
   .field input:focus, .field select:focus, .field textarea:focus {
     border-color: var(--border-focus);
   }
-  .field textarea {
-    min-height: 100px;
-    resize: vertical;
-  }
+  .field textarea { min-height: 100px; resize: vertical; }
   .field select { cursor: pointer; }
-  .field .hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
+  .field .hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
   .checkbox-row {
     display: flex;
@@ -573,13 +548,8 @@
     gap: 2px 16px;
   }
 
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 20px 0;
-  }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
 
-  /* ── Status Indicator ── */
   .sw-status {
     display: flex;
     align-items: center;
@@ -598,7 +568,6 @@
 
   .sw-dot.active { background: var(--success); box-shadow: 0 0 6px rgba(52,211,153,0.5); }
 
-  /* ── Toast ── */
   .toast-container {
     position: fixed;
     bottom: 24px;
@@ -631,7 +600,6 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* ── Responsive ── */
   @media (max-width: 600px) {
     .module-grid { grid-template-columns: 1fr; }
     .lock-card { margin: 16px; padding: 32px 24px; }
@@ -639,20 +607,11 @@
     .topbar { padding: 12px 16px; }
     .main-content { padding: 20px 16px; }
   }
-
-  /* ── Empty state ── */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-  }
-  .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 14px; line-height: 1.6; }
 </style>
 </head>
 <body>
 
-<!-- ────── LOCK SCREEN ────── -->
+<!-- ── LOCK SCREEN ── -->
 <div class="lock-screen" id="lockScreen">
   <div class="lock-card">
     <div class="lock-icon">⬡</div>
@@ -672,7 +631,7 @@
   </div>
 </div>
 
-<!-- ────── MAIN APP ────── -->
+<!-- ── MAIN APP ── -->
 <div class="app" id="app">
   <div class="topbar">
     <div class="topbar-left">
@@ -682,30 +641,25 @@
     <div class="topbar-right">
       <div class="sw-status">
         <div class="sw-dot" id="swDot"></div>
-        <span id="swLabel">SW: inactive</span>
+        <span id="swLabel">SW: init</span>
       </div>
       <button class="btn-icon" title="Lock" onclick="lockApp()">🔒</button>
     </div>
   </div>
-
   <div class="main-content">
     <div class="section-title">Installed Modules</div>
-    <div class="module-grid" id="moduleGrid">
-      <!-- Modules render here -->
-    </div>
+    <div class="module-grid" id="moduleGrid"></div>
   </div>
 </div>
 
-<!-- ────── MODULE CONFIG MODAL ────── -->
+<!-- ── MODAL ── -->
 <div class="modal-overlay" id="configModal">
   <div class="modal">
     <div class="modal-header">
       <h2 id="modalTitle">Module Configuration</h2>
       <button class="btn-icon" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body" id="modalBody">
-      <!-- Rendered dynamically -->
-    </div>
+    <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer" id="modalFooter">
       <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary btn-sm" id="modalSave">Save</button>
@@ -713,17 +667,87 @@
   </div>
 </div>
 
-<!-- ────── TOAST CONTAINER ────── -->
 <div class="toast-container" id="toasts"></div>
 
 <script>
 // ═══════════════════════════════════════════
-//  Crypto Utilities (AES-256-GCM)
+//  IndexedDB — shared between page and SW
+// ═══════════════════════════════════════════
+
+const DB_NAME = 'sandbox-launcher';
+const DB_VERSION = 1;
+let _db = null;
+
+function openDB() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('modules')) db.createObjectStore('modules');
+      if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+    };
+    req.onsuccess = () => { _db = req.result; resolve(_db); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbPut(store, key, value) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function dbGet(store, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbDelete(store, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function dbGetAllKeys(store) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAllKeys();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbClear(store) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  Crypto (AES-256-GCM)
 // ═══════════════════════════════════════════
 
 const SALT_KEY = 'sandbox_salt';
 const VAULT_KEY = 'sandbox_vault';
-const CHECK_KEY = 'sandbox_check';
 
 async function deriveKey(password, salt) {
   const enc = new TextEncoder();
@@ -739,24 +763,21 @@ async function deriveKey(password, salt) {
   );
 }
 
-async function encrypt(data, key) {
+async function encryptData(data, key) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const enc = new TextEncoder();
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    enc.encode(JSON.stringify(data))
+  const ct = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv }, key,
+    new TextEncoder().encode(JSON.stringify(data))
   );
-  return { iv: Array.from(iv), ct: Array.from(new Uint8Array(ciphertext)) };
+  return { iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) };
 }
 
-async function decrypt(bundle, key) {
-  const iv = new Uint8Array(bundle.iv);
-  const ct = new Uint8Array(bundle.ct);
-  const plaintext = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv }, key, ct
+async function decryptData(bundle, key) {
+  const plain = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: new Uint8Array(bundle.iv) },
+    key, new Uint8Array(bundle.ct)
   );
-  return JSON.parse(new TextDecoder().decode(plaintext));
+  return JSON.parse(new TextDecoder().decode(plain));
 }
 
 // ═══════════════════════════════════════════
@@ -764,7 +785,7 @@ async function decrypt(bundle, key) {
 // ═══════════════════════════════════════════
 
 let cryptoKey = null;
-let modules = {};  // id -> module config
+let modules = {};  // id -> config (decrypted, in memory while unlocked)
 let swReady = false;
 
 // ═══════════════════════════════════════════
@@ -805,22 +826,20 @@ async function handleLock() {
   const hasVault = localStorage.getItem(VAULT_KEY);
 
   errEl.textContent = '';
-
   if (!pw) { errEl.textContent = 'Password required'; return; }
 
   if (hasVault) {
-    // Decrypt existing vault
     try {
       const salt = new Uint8Array(JSON.parse(localStorage.getItem(SALT_KEY)));
       cryptoKey = await deriveKey(pw, salt);
       const vault = JSON.parse(localStorage.getItem(VAULT_KEY));
-      modules = await decrypt(vault, cryptoKey);
+      modules = await decryptData(vault, cryptoKey);
+      await syncModulesToIDB();
       unlockApp();
     } catch (e) {
       errEl.textContent = 'Wrong password';
     }
   } else {
-    // Create new vault
     if (pw.length < 4) { errEl.textContent = 'Minimum 4 characters'; return; }
     if (pw !== confirm) { errEl.textContent = 'Passwords don\'t match'; return; }
 
@@ -835,8 +854,18 @@ async function handleLock() {
 
 async function saveVault() {
   if (!cryptoKey) return;
-  const encrypted = await encrypt(modules, cryptoKey);
+  const encrypted = await encryptData(modules, cryptoKey);
   localStorage.setItem(VAULT_KEY, JSON.stringify(encrypted));
+}
+
+// Write decrypted module configs to IndexedDB so the SW can read them
+async function syncModulesToIDB() {
+  // Clear old configs
+  await dbClear('modules');
+  // Write current configs
+  for (const [id, config] of Object.entries(modules)) {
+    await dbPut('modules', id, config);
+  }
 }
 
 function unlockApp() {
@@ -845,12 +874,13 @@ function unlockApp() {
   document.getElementById('lockPassword').value = '';
   document.getElementById('lockConfirm').value = '';
   renderModules();
-  syncModulesToSW();
 }
 
-function lockApp() {
+async function lockApp() {
   cryptoKey = null;
   modules = {};
+  // Clear decrypted configs from IndexedDB (files stay — they're useless without configs)
+  await dbClear('modules');
   document.getElementById('app').classList.remove('active');
   document.getElementById('lockScreen').style.display = '';
   initLockScreen();
@@ -870,59 +900,56 @@ async function initServiceWorker() {
   try {
     const reg = await navigator.serviceWorker.register('./sw.js');
 
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data.type === 'module-registered') {
-        console.log('[SW] Module registered:', event.data.id);
-      }
-    });
-
-    // Wait for active SW
-    const sw = reg.active || reg.waiting || reg.installing;
-    if (sw?.state === 'activated') {
-      swReady = true;
-      updateSWStatus(true, 'active');
-    }
-
-    if (reg.installing) {
-      reg.installing.addEventListener('statechange', function () {
-        if (this.state === 'activated') {
-          swReady = true;
-          updateSWStatus(true, 'active');
-        }
-      });
-    }
-
-    // Also handle controller change (first install requires reload)
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      swReady = true;
-      updateSWStatus(true, 'active');
-    });
-
+    // Already controlled — ready to go
     if (navigator.serviceWorker.controller) {
       swReady = true;
       updateSWStatus(true, 'active');
+      return;
+    }
+
+    // First install: wait for the SW to activate then reload
+    // so it can control this page and intercept fetches
+    const installing = reg.installing || reg.waiting;
+    if (installing) {
+      updateSWStatus(false, 'installing');
+      installing.addEventListener('statechange', function() {
+        if (this.state === 'activated') {
+          // SW is active but doesn't control us yet — reload
+          updateSWStatus(false, 'reloading');
+          window.location.reload();
+        }
+      });
+      return;
+    }
+
+    // Edge case: SW is active but not controlling (e.g. hard refresh)
+    if (reg.active) {
+      // clients.claim() in SW should handle this, but force reload if needed
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        swReady = true;
+        updateSWStatus(true, 'active');
+      });
+      // Give it a moment for claim() to propagate
+      setTimeout(() => {
+        if (navigator.serviceWorker.controller) {
+          swReady = true;
+          updateSWStatus(true, 'active');
+        } else {
+          updateSWStatus(false, 'no control');
+          // Reload to get control
+          window.location.reload();
+        }
+      }, 500);
     }
   } catch (e) {
     console.error('[SW] Registration failed:', e);
-    updateSWStatus(false, 'error');
+    updateSWStatus(false, 'error: ' + e.message);
   }
 }
 
 function updateSWStatus(active, label) {
   document.getElementById('swDot').classList.toggle('active', active);
-  document.getElementById('swLabel').textContent = `SW: ${label}`;
-}
-
-function sendToSW(type, payload) {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type, payload });
-  }
-}
-
-async function syncModulesToSW() {
-  for (const [id, mod] of Object.entries(modules)) {
-    sendToSW('register-module', { id, config: mod });
-  }
+  document.getElementById('swLabel').textContent = 'SW: ' + label;
 }
 
 // ═══════════════════════════════════════════
@@ -936,7 +963,6 @@ function generateId() {
 }
 
 async function addModuleFromFolder() {
-  // Use a hidden file input with webkitdirectory — works on all Chrome including ChromeOS
   const input = document.createElement('input');
   input.type = 'file';
   input.webkitdirectory = true;
@@ -949,31 +975,24 @@ async function addModuleFromFolder() {
       const files = {};
       let folderName = '';
 
-      // Process all files from the directory
       for (const file of input.files) {
-        // webkitRelativePath gives us "folderName/path/to/file.ext"
-        const relPath = file.webkitRelativePath;
-        // Extract the folder name from the first segment
-        const parts = relPath.split('/');
+        const parts = file.webkitRelativePath.split('/');
         if (!folderName) folderName = parts[0];
-        // Get path relative to the folder root
         const innerPath = parts.slice(1).join('/');
         if (!innerPath) continue;
 
-        const text = await file.text();
         const isBinary = /\.(wasm|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|bin|dat|zip|mp3|wav|mp4|webm)$/i.test(file.name);
 
         files[innerPath] = {
-          text,
-          content: isBinary ? await file.arrayBuffer() : text,
+          text: isBinary ? null : await file.text(),
+          content: isBinary ? await file.arrayBuffer() : await file.text(),
           type: file.type || 'application/octet-stream',
         };
       }
 
-      let manifest = null;
-
       // Look for module.json
-      if (files['module.json']) {
+      let manifest = null;
+      if (files['module.json'] && files['module.json'].text) {
         try {
           manifest = JSON.parse(files['module.json'].text);
         } catch (e) {
@@ -982,10 +1001,8 @@ async function addModuleFromFolder() {
         }
       }
 
-      // If no manifest, create a basic one
       if (!manifest) {
-        const hasIndex = files['index.html'];
-        if (!hasIndex) {
+        if (!files['index.html']) {
           toast('No index.html or module.json found', 'error');
           return;
         }
@@ -1004,15 +1021,14 @@ async function addModuleFromFolder() {
       manifest._id = id;
       manifest._fileList = Object.keys(files);
       manifest._icon = manifest.icon || '📦';
+
+      // Store module config
       modules[id] = manifest;
+      await dbPut('modules', id, manifest);
 
-      // Send files to Service Worker
-      sendToSW('register-module', { id, config: manifest });
-
+      // Store all files in IndexedDB
       for (const [path, fileData] of Object.entries(files)) {
-        sendToSW('store-module-file', {
-          moduleId: id,
-          path,
+        await dbPut('files', id + '/' + path, {
           data: fileData.content,
           contentType: fileData.type,
         });
@@ -1020,25 +1036,36 @@ async function addModuleFromFolder() {
 
       await saveVault();
       renderModules();
-      toast(`"${manifest.name}" installed`, 'success');
+      toast('"' + manifest.name + '" installed', 'success');
     } catch (e) {
       console.error(e);
-      toast('Failed to import module', 'error');
+      toast('Failed to import module: ' + e.message, 'error');
     }
   });
 
-  // Trigger the file picker
   input.click();
 }
 
-function removeModule(id) {
+async function removeModule(id) {
   const name = modules[id]?.name || 'Module';
-  if (!confirm(`Remove "${name}"? This will delete all associated data.`)) return;
-  sendToSW('unregister-module', { id });
+  if (!confirm('Remove "' + name + '"? This will delete all data.')) return;
+
+  // Remove config
   delete modules[id];
-  saveVault();
+  await dbDelete('modules', id);
+
+  // Remove all files for this module
+  const allFileKeys = await dbGetAllKeys('files');
+  const prefix = id + '/';
+  for (const key of allFileKeys) {
+    if (key.startsWith(prefix)) {
+      await dbDelete('files', key);
+    }
+  }
+
+  await saveVault();
   renderModules();
-  toast(`"${name}" removed`, 'success');
+  toast('"' + name + '" removed', 'success');
 }
 
 function launchModule(id) {
@@ -1050,25 +1077,21 @@ function launchModule(id) {
     return;
   }
 
-  const url = `./module/${id}/`;
-
-  // Open module — if it needs isolation (COOP), must open in new window
-  if (mod.permissions?.shared_array_buffer || mod.headers?.['Cross-Origin-Opener-Policy']) {
-    window.open(url, '_blank');
-  } else {
-    window.open(url, '_blank');
-  }
+  // Open module in new window
+  // The SW will intercept this URL and serve from IndexedDB
+  const url = './module/' + id + '/';
+  window.open(url, '_blank');
 }
 
 // ═══════════════════════════════════════════
-//  Module Config Modal
+//  Config Modal
 // ═══════════════════════════════════════════
 
 function openConfig(id) {
   const mod = modules[id];
   if (!mod) return;
 
-  document.getElementById('modalTitle').textContent = `Configure: ${mod.name}`;
+  document.getElementById('modalTitle').textContent = 'Configure: ' + mod.name;
 
   const permList = [
     ['shared_array_buffer', 'SharedArrayBuffer'],
@@ -1086,97 +1109,97 @@ function openConfig(id) {
   const perms = mod.permissions || {};
   const headers = mod.headers || {};
 
-  document.getElementById('modalBody').innerHTML = `
-    <div class="field">
-      <label>Module Name</label>
-      <input id="cfg_name" value="${esc(mod.name || '')}">
-    </div>
-    <div class="field">
-      <label>Description</label>
-      <input id="cfg_desc" value="${esc(mod.description || '')}">
-    </div>
-    <div class="field">
-      <label>Entry File</label>
-      <input id="cfg_entry" value="${esc(mod.entry || 'index.html')}">
-      <div class="hint">Main HTML file to load</div>
-    </div>
-    <div class="field">
-      <label>Icon (emoji)</label>
-      <input id="cfg_icon" value="${esc(mod._icon || '📦')}" maxlength="4" style="width:80px">
-    </div>
+  const otherHeaders = Object.fromEntries(
+    Object.entries(headers).filter(([k]) =>
+      !['Cross-Origin-Opener-Policy','Cross-Origin-Embedder-Policy'].includes(k)
+    )
+  );
 
-    <div class="divider"></div>
-    <div class="section-title" style="margin-top:0">Response Headers</div>
+  document.getElementById('modalBody').innerHTML =
+    '<div class="field">' +
+      '<label>Module Name</label>' +
+      '<input id="cfg_name" value="' + esc(mod.name || '') + '">' +
+    '</div>' +
+    '<div class="field">' +
+      '<label>Description</label>' +
+      '<input id="cfg_desc" value="' + esc(mod.description || '') + '">' +
+    '</div>' +
+    '<div class="field">' +
+      '<label>Entry File</label>' +
+      '<input id="cfg_entry" value="' + esc(mod.entry || 'index.html') + '">' +
+      '<div class="hint">Main HTML file to load</div>' +
+    '</div>' +
+    '<div class="field">' +
+      '<label>Icon (emoji)</label>' +
+      '<input id="cfg_icon" value="' + esc(mod._icon || '📦') + '" maxlength="4" style="width:80px">' +
+    '</div>' +
 
-    <div class="field">
-      <label>Cross-Origin-Opener-Policy</label>
-      <select id="cfg_coop">
-        <option value="">None</option>
-        <option value="same-origin" ${headers['Cross-Origin-Opener-Policy']==='same-origin'?'selected':''}>same-origin</option>
-        <option value="same-origin-allow-popups" ${headers['Cross-Origin-Opener-Policy']==='same-origin-allow-popups'?'selected':''}>same-origin-allow-popups</option>
-        <option value="unsafe-none" ${headers['Cross-Origin-Opener-Policy']==='unsafe-none'?'selected':''}>unsafe-none</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Cross-Origin-Embedder-Policy</label>
-      <select id="cfg_coep">
-        <option value="">None</option>
-        <option value="require-corp" ${headers['Cross-Origin-Embedder-Policy']==='require-corp'?'selected':''}>require-corp</option>
-        <option value="credentialless" ${headers['Cross-Origin-Embedder-Policy']==='credentialless'?'selected':''}>credentialless</option>
-      </select>
-    </div>
+    '<div class="divider"></div>' +
+    '<div class="section-title" style="margin-top:0">Response Headers</div>' +
 
-    <div class="field" id="customHeadersField">
-      <label>Custom Headers (JSON)</label>
-      <textarea id="cfg_customHeaders" rows="3" placeholder='{"X-Custom": "value"}'>${esc(JSON.stringify(
-        Object.fromEntries(Object.entries(headers).filter(([k]) =>
-          !['Cross-Origin-Opener-Policy','Cross-Origin-Embedder-Policy'].includes(k)
-        )),
-        null, 2
-      ))}</textarea>
-    </div>
+    '<div class="field">' +
+      '<label>Cross-Origin-Opener-Policy</label>' +
+      '<select id="cfg_coop">' +
+        '<option value="">None</option>' +
+        '<option value="same-origin"' + (headers['Cross-Origin-Opener-Policy']==='same-origin'?' selected':'') + '>same-origin</option>' +
+        '<option value="same-origin-allow-popups"' + (headers['Cross-Origin-Opener-Policy']==='same-origin-allow-popups'?' selected':'') + '>same-origin-allow-popups</option>' +
+        '<option value="unsafe-none"' + (headers['Cross-Origin-Opener-Policy']==='unsafe-none'?' selected':'') + '>unsafe-none</option>' +
+      '</select>' +
+    '</div>' +
+    '<div class="field">' +
+      '<label>Cross-Origin-Embedder-Policy</label>' +
+      '<select id="cfg_coep">' +
+        '<option value="">None</option>' +
+        '<option value="require-corp"' + (headers['Cross-Origin-Embedder-Policy']==='require-corp'?' selected':'') + '>require-corp</option>' +
+        '<option value="credentialless"' + (headers['Cross-Origin-Embedder-Policy']==='credentialless'?' selected':'') + '>credentialless</option>' +
+      '</select>' +
+    '</div>' +
 
-    <div class="divider"></div>
-    <div class="section-title" style="margin-top:0">Permissions</div>
-    <div class="permissions-grid">
-      ${permList.map(([key, label]) => `
-        <div class="checkbox-row">
-          <input type="checkbox" id="perm_${key}" ${perms[key] ? 'checked' : ''}>
-          <label for="perm_${key}">${label}</label>
-        </div>
-      `).join('')}
-    </div>
+    '<div class="field">' +
+      '<label>Custom Headers (JSON)</label>' +
+      '<textarea id="cfg_customHeaders" rows="3" placeholder=\'{"X-Custom":"value"}\'>' + esc(JSON.stringify(otherHeaders, null, 2)) + '</textarea>' +
+    '</div>' +
 
-    <div class="divider"></div>
-    <div class="section-title" style="margin-top:0">Network</div>
-    <div class="field">
-      <label>TCP Proxy URL</label>
-      <input id="cfg_proxy" value="${esc(mod.network?.tcp_proxy || '')}" placeholder="https://your-worker.workers.dev">
-      <div class="hint">Cloudflare Worker or similar TCP relay</div>
-    </div>
-    <div class="checkbox-row">
-      <input type="checkbox" id="cfg_tailscale" ${mod.network?.tailscale ? 'checked' : ''}>
-      <label for="cfg_tailscale">Enable Tailscale networking</label>
-    </div>
-    <div class="checkbox-row">
-      <input type="checkbox" id="cfg_webrtc" ${mod.network?.webrtc ? 'checked' : ''}>
-      <label for="cfg_webrtc">Enable WebRTC</label>
-    </div>
+    '<div class="divider"></div>' +
+    '<div class="section-title" style="margin-top:0">Permissions</div>' +
+    '<div class="permissions-grid">' +
+      permList.map(([key, label]) =>
+        '<div class="checkbox-row">' +
+          '<input type="checkbox" id="perm_' + key + '"' + (perms[key] ? ' checked' : '') + '>' +
+          '<label for="perm_' + key + '">' + label + '</label>' +
+        '</div>'
+      ).join('') +
+    '</div>' +
 
-    <div class="divider"></div>
-    <div class="field">
-      <label>Files in module</label>
-      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted); max-height:120px; overflow-y:auto; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm); border:1px solid var(--border)">
-        ${(mod._fileList || []).map(f => `<div style="padding:2px 0">${esc(f)}</div>`).join('') || '<div>No files stored</div>'}
-      </div>
-    </div>
-  `;
+    '<div class="divider"></div>' +
+    '<div class="section-title" style="margin-top:0">Network</div>' +
+    '<div class="field">' +
+      '<label>TCP Proxy URL</label>' +
+      '<input id="cfg_proxy" value="' + esc(mod.network?.tcp_proxy || '') + '" placeholder="https://your-worker.workers.dev">' +
+      '<div class="hint">Cloudflare Worker or similar TCP relay</div>' +
+    '</div>' +
+    '<div class="checkbox-row">' +
+      '<input type="checkbox" id="cfg_tailscale"' + (mod.network?.tailscale ? ' checked' : '') + '>' +
+      '<label for="cfg_tailscale">Enable Tailscale networking</label>' +
+    '</div>' +
+    '<div class="checkbox-row">' +
+      '<input type="checkbox" id="cfg_webrtc"' + (mod.network?.webrtc ? ' checked' : '') + '>' +
+      '<label for="cfg_webrtc">Enable WebRTC</label>' +
+    '</div>' +
+
+    '<div class="divider"></div>' +
+    '<div class="field">' +
+      '<label>Files in module</label>' +
+      '<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text-muted);max-height:120px;overflow-y:auto;padding:8px;background:var(--bg-input);border-radius:var(--radius-sm);border:1px solid var(--border)">' +
+        ((mod._fileList || []).map(f => '<div style="padding:2px 0">' + esc(f) + '</div>').join('') || '<div>No files</div>') +
+      '</div>' +
+    '</div>';
 
   document.getElementById('modalSave').onclick = () => saveConfig(id);
   document.getElementById('configModal').classList.add('open');
 }
 
-function saveConfig(id) {
+async function saveConfig(id) {
   const mod = modules[id];
   if (!mod) return;
 
@@ -1185,43 +1208,32 @@ function saveConfig(id) {
   mod.entry = document.getElementById('cfg_entry').value || 'index.html';
   mod._icon = document.getElementById('cfg_icon').value || '📦';
 
-  // Headers
   const headers = {};
   const coop = document.getElementById('cfg_coop').value;
   const coep = document.getElementById('cfg_coep').value;
   if (coop) headers['Cross-Origin-Opener-Policy'] = coop;
   if (coep) headers['Cross-Origin-Embedder-Policy'] = coep;
-
   try {
-    const custom = JSON.parse(document.getElementById('cfg_customHeaders').value || '{}');
-    Object.assign(headers, custom);
+    Object.assign(headers, JSON.parse(document.getElementById('cfg_customHeaders').value || '{}'));
   } catch (e) {}
-
   mod.headers = headers;
 
-  // Permissions
-  const permKeys = [
-    'shared_array_buffer','webgpu','web_audio','gamepad',
-    'pointer_lock','fullscreen','persistent_storage',
-    'clipboard','camera','microphone'
-  ];
+  const permKeys = ['shared_array_buffer','webgpu','web_audio','gamepad','pointer_lock','fullscreen','persistent_storage','clipboard','camera','microphone'];
   mod.permissions = {};
   for (const key of permKeys) {
-    const el = document.getElementById(`perm_${key}`);
+    const el = document.getElementById('perm_' + key);
     if (el?.checked) mod.permissions[key] = true;
   }
 
-  // Network
   mod.network = {
     tcp_proxy: document.getElementById('cfg_proxy').value || '',
     tailscale: document.getElementById('cfg_tailscale').checked,
     webrtc: document.getElementById('cfg_webrtc').checked,
   };
 
-  // Re-register with SW
-  sendToSW('register-module', { id, config: mod });
-
-  saveVault();
+  // Persist to both IDB and vault
+  await dbPut('modules', id, mod);
+  await saveVault();
   renderModules();
   closeModal();
   toast('Configuration saved', 'success');
@@ -1247,45 +1259,38 @@ const ICON_COLORS = [
 function renderModules() {
   const grid = document.getElementById('moduleGrid');
   const entries = Object.entries(modules);
-
   let html = '';
 
   entries.forEach(([id, mod], i) => {
     const colorIdx = i % ICON_COLORS.length;
     const icon = mod._icon || '📦';
     const tags = [];
-
     if (mod.permissions?.shared_array_buffer) tags.push('<span class="tag">SAB</span>');
     if (mod.permissions?.webgpu) tags.push('<span class="tag">WebGPU</span>');
     if (mod.permissions?.fullscreen) tags.push('<span class="tag tag-green">Fullscreen</span>');
     if (mod.network?.tailscale) tags.push('<span class="tag tag-yellow">Tailscale</span>');
 
-    html += `
-      <div class="module-card">
-        <div class="module-card-header">
-          <div class="module-icon-wrap" style="background:${ICON_COLORS[colorIdx]}">
-            ${icon}
-          </div>
-          <div class="module-card-actions">
-            <button onclick="openConfig('${id}')" title="Configure">⚙</button>
-            <button onclick="removeModule('${id}')" title="Remove">✕</button>
-          </div>
-        </div>
-        <div class="module-name">${esc(mod.name || 'Untitled')}</div>
-        <div class="module-desc">${esc(mod.description || 'No description')}</div>
-        <div class="module-tags">${tags.join('')}</div>
-        <button class="btn btn-primary" onclick="launchModule('${id}')">Launch</button>
-      </div>
-    `;
+    html +=
+      '<div class="module-card">' +
+        '<div class="module-card-header">' +
+          '<div class="module-icon-wrap" style="background:' + ICON_COLORS[colorIdx] + '">' + icon + '</div>' +
+          '<div class="module-card-actions">' +
+            '<button onclick="openConfig(\'' + id + '\')" title="Configure">⚙</button>' +
+            '<button onclick="removeModule(\'' + id + '\')" title="Remove">✕</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="module-name">' + esc(mod.name || 'Untitled') + '</div>' +
+        '<div class="module-desc">' + esc(mod.description || 'No description') + '</div>' +
+        '<div class="module-tags">' + tags.join('') + '</div>' +
+        '<button class="btn btn-primary" onclick="launchModule(\'' + id + '\')">Launch</button>' +
+      '</div>';
   });
 
-  // Add Module card
-  html += `
-    <div class="module-card add-card" onclick="addModuleFromFolder()">
-      <div class="add-card-icon">+</div>
-      <span>Add Module from Folder</span>
-    </div>
-  `;
+  html +=
+    '<div class="module-card add-card" onclick="addModuleFromFolder()">' +
+      '<div class="add-card-icon">+</div>' +
+      '<span>Add Module from Folder</span>' +
+    '</div>';
 
   grid.innerHTML = html;
 }
@@ -1297,16 +1302,17 @@ function esc(str) {
 }
 
 // ═══════════════════════════════════════════
-//  Toast Notifications
+//  Toast
 // ═══════════════════════════════════════════
 
-function toast(message, type = 'info') {
-  const container = document.getElementById('toasts');
+function toast(message, type) {
+  type = type || 'info';
+  const c = document.getElementById('toasts');
   const el = document.createElement('div');
-  el.className = `toast ${type}`;
+  el.className = 'toast ' + type;
   const icons = { success: '✓', error: '✗', info: 'ℹ' };
-  el.innerHTML = `<span>${icons[type] || ''}</span> ${esc(message)}`;
-  container.appendChild(el);
+  el.innerHTML = '<span>' + (icons[type] || '') + '</span> ' + esc(message);
+  c.appendChild(el);
   setTimeout(() => {
     el.style.opacity = '0';
     el.style.transform = 'translateX(40px)';
@@ -1316,20 +1322,15 @@ function toast(message, type = 'info') {
 }
 
 // ═══════════════════════════════════════════
-//  Modal click-outside-to-close
+//  Init
 // ═══════════════════════════════════════════
 
 document.getElementById('configModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeModal();
 });
 
-// ═══════════════════════════════════════════
-//  Init
-// ═══════════════════════════════════════════
-
 initLockScreen();
 initServiceWorker();
 </script>
-
 </body>
 </html>
