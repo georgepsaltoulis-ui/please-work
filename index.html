@@ -868,7 +868,7 @@ async function initServiceWorker() {
   }
 
   try {
-    const reg = await navigator.serviceWorker.register('sw.js', { scope: '/' });
+    const reg = await navigator.serviceWorker.register('./sw.js');
 
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data.type === 'module-registered') {
@@ -1044,7 +1044,7 @@ function launchModule(id) {
     return;
   }
 
-  const url = `/module/${id}/`;
+  const url = `./module/${id}/`;
 
   // Open module — if it needs isolation (COOP), must open in new window
   if (mod.permissions?.shared_array_buffer || mod.headers?.['Cross-Origin-Opener-Policy']) {
