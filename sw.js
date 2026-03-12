@@ -1,166 +1,148 @@
 /*
- * Launcher Service Worker
- * Handles: header injection per-module, module file serving, caching
+ * Launcher Service Worker v2
+ * 
+ * Fully stateless — reads everything from IndexedDB on each request.
+ * Can be killed/restarted by the browser at any time without data loss.
+ * The page writes to IndexedDB; this SW only reads.
  */
 
-const CACHE_NAME = 'launcher-v1';
-const moduleConfigs = new Map();
-const moduleFiles = new Map(); // moduleId -> Map<relativePath, fileData>
+const DB_NAME = 'sandbox-launcher';
+const DB_VERSION = 1;
 
-// Install: cache the launcher shell
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(['/']))
-  );
-});
+// ── Install: skip waiting, no caching needed ──
+self.addEventListener('install', () => self.skipWaiting());
 
-// Activate: claim all clients immediately
+// ── Activate: claim all clients immediately ──
 self.addEventListener('activate', (event) => {
   event.waitUntil(clients.claim());
 });
 
-// Message handler: register modules, store files
-self.addEventListener('message', (event) => {
-  const { type, payload } = event.data;
+// ── IndexedDB helpers ──
 
-  switch (type) {
-    case 'register-module': {
-      const { id, config, basePath } = payload;
-      moduleConfigs.set(id, { config, basePath });
-      event.source.postMessage({ type: 'module-registered', id });
-      break;
-    }
-
-    case 'store-module-file': {
-      const { moduleId, path, data, contentType } = payload;
-      if (!moduleFiles.has(moduleId)) {
-        moduleFiles.set(moduleId, new Map());
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('modules')) {
+        db.createObjectStore('modules');
       }
-      moduleFiles.get(moduleId).set(path, { data, contentType });
-      break;
-    }
-
-    case 'unregister-module': {
-      const { id } = payload;
-      moduleConfigs.delete(id);
-      moduleFiles.delete(id);
-      event.source.postMessage({ type: 'module-unregistered', id });
-      break;
-    }
-
-    case 'get-modules': {
-      const modules = {};
-      for (const [id, val] of moduleConfigs) {
-        modules[id] = val.config;
+      if (!db.objectStoreNames.contains('files')) {
+        db.createObjectStore('files');
       }
-      event.source.postMessage({ type: 'modules-list', modules });
-      break;
-    }
-  }
-});
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
 
-// Fetch handler: intercept module requests and inject headers
+function dbGet(storeName, key) {
+  return openDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  }));
+}
+
+// ── Fetch handler ──
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   const scope = new URL(self.registration.scope).pathname;
 
-  // Check if this request is for a module route: {scope}module/{id}/...
-  const modulePath = url.pathname.startsWith(scope) 
-    ? url.pathname.slice(scope.length) 
-    : null;
-  
-  const moduleMatch = modulePath?.match(/^module\/([^/]+)(\/.*)?$/);
+  // Only handle requests within our scope
+  if (!url.pathname.startsWith(scope)) return;
+
+  // Strip scope prefix to get the relative path
+  const relativePath = url.pathname.slice(scope.length);
+
+  // Check if this is a module route: module/{id}/...
+  const moduleMatch = relativePath.match(/^module\/([^/]+)(\/.*)?$/);
 
   if (moduleMatch) {
-    const moduleId = moduleMatch[1];
-    const resourcePath = moduleMatch[2] || '/index.html';
-
-    event.respondWith(serveModuleFile(moduleId, resourcePath));
+    event.respondWith(serveModule(moduleMatch[1], moduleMatch[2] || '/'));
     return;
   }
 
-  // For everything else, serve from cache or network
-  event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
-  );
+  // Everything else: network only (let GitHub Pages serve it)
+  // Don't cache — avoids stale SW issues during development
 });
 
-async function serveModuleFile(moduleId, resourcePath) {
-  const moduleConfig = moduleConfigs.get(moduleId);
-  if (!moduleConfig) {
-    return new Response('Module not found', { status: 404 });
-  }
-
-  // Normalize path
-  let filePath = resourcePath;
-  if (filePath === '/' || filePath === '') {
-    filePath = '/' + (moduleConfig.config.entry || 'index.html');
-  }
-  // Remove leading slash for map lookup
-  const lookupPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
-
-  // Try to serve from stored module files
-  const files = moduleFiles.get(moduleId);
-  if (!files || !files.has(lookupPath)) {
-    return new Response(`File not found: ${lookupPath}`, { status: 404 });
-  }
-
-  const fileData = files.get(lookupPath);
-
-  // Build headers from module manifest
-  const headers = new Headers({
-    'Content-Type': fileData.contentType || guessContentType(lookupPath),
-  });
-
-  // Inject module-declared headers
-  if (moduleConfig.config.headers) {
-    for (const [key, value] of Object.entries(moduleConfig.config.headers)) {
-      headers.set(key, value);
+async function serveModule(moduleId, resourcePath) {
+  try {
+    // Read module config from IndexedDB
+    const config = await dbGet('modules', moduleId);
+    if (!config) {
+      return new Response('Module not found. Is the launcher unlocked?', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain' }
+      });
     }
-  }
 
-  // If module requests SharedArrayBuffer support, ensure COOP/COEP
-  if (moduleConfig.config.permissions?.shared_array_buffer) {
-    headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-    headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  }
+    // Normalize path
+    let filePath = resourcePath;
+    if (filePath === '/' || filePath === '') {
+      filePath = config.entry || 'index.html';
+    }
+    if (filePath.startsWith('/')) {
+      filePath = filePath.slice(1);
+    }
 
-  return new Response(fileData.data, {
-    status: 200,
-    headers,
-  });
+    // Read file from IndexedDB
+    const fileKey = moduleId + '/' + filePath;
+    const fileData = await dbGet('files', fileKey);
+    if (!fileData) {
+      return new Response('File not found: ' + filePath, {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    }
+
+    // Build response headers
+    const headers = new Headers({
+      'Content-Type': fileData.contentType || guessContentType(filePath),
+    });
+
+    // Inject headers from module config
+    if (config.headers) {
+      for (const [key, value] of Object.entries(config.headers)) {
+        headers.set(key, value);
+      }
+    }
+
+    // If module needs SharedArrayBuffer, force COOP/COEP
+    if (config.permissions?.shared_array_buffer) {
+      headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+      headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+    }
+
+    return new Response(fileData.data, { status: 200, headers });
+
+  } catch (err) {
+    return new Response('Internal error: ' + err.message, {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
 }
 
 function guessContentType(path) {
   const ext = path.split('.').pop()?.toLowerCase();
   const types = {
-    html: 'text/html',
-    htm: 'text/html',
-    js: 'application/javascript',
-    mjs: 'application/javascript',
-    css: 'text/css',
-    json: 'application/json',
+    html: 'text/html', htm: 'text/html',
+    js: 'application/javascript', mjs: 'application/javascript',
+    css: 'text/css', json: 'application/json',
     wasm: 'application/wasm',
-    png: 'image/png',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    gif: 'image/gif',
-    svg: 'image/svg+xml',
-    ico: 'image/x-icon',
-    woff: 'font/woff',
-    woff2: 'font/woff2',
-    ttf: 'font/ttf',
-    txt: 'text/plain',
-    md: 'text/markdown',
-    bin: 'application/octet-stream',
-    dat: 'application/octet-stream',
-    zip: 'application/zip',
-    mp3: 'audio/mpeg',
-    wav: 'audio/wav',
-    mp4: 'video/mp4',
-    webm: 'video/webm',
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    gif: 'image/gif', svg: 'image/svg+xml', ico: 'image/x-icon',
     webp: 'image/webp',
+    woff: 'font/woff', woff2: 'font/woff2', ttf: 'font/ttf',
+    txt: 'text/plain', md: 'text/markdown',
+    bin: 'application/octet-stream', dat: 'application/octet-stream',
+    zip: 'application/zip',
+    mp3: 'audio/mpeg', wav: 'audio/wav',
+    mp4: 'video/mp4', webm: 'video/webm',
   };
   return types[ext] || 'application/octet-stream';
 }
