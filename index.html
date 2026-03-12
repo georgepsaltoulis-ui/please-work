@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandbox Launcher</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg-deep: #0a0a0f;
+    --bg-surface: #12121a;
+    --bg-card: #1a1a26;
+    --bg-card-hover: #222233;
+    --bg-input: #16161f;
+    --border: #2a2a3a;
+    --border-focus: #6366f1;
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888a0;
+    --text-muted: #555566;
+    --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.15);
+    --accent-hover: #818cf8;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Lock Screen ── */
+  .lock-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lock-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%);
+  }
+
+  .lock-card {
+    position: relative;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+
+  .lock-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.25);
+  }
+
+  .lock-card h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .lock-card p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 28px;
+    font-weight: 400;
+  }
+
+  .input-group {
+    position: relative;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+
+  .input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-group input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .input-group input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { background: var(--bg-card-hover); border-color: var(--border-focus); }
+
+  .btn-danger {
+    background: rgba(248,113,113,0.1);
+    color: var(--danger);
+    border: 1px solid rgba(248,113,113,0.2);
+  }
+
+  .btn-danger:hover { background: rgba(248,113,113,0.2); }
+
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-icon:hover { color: var(--text-primary); border-color: var(--border-focus); }
+
+  .error-msg {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 8px;
+    min-height: 20px;
+  }
+
+  .hint-msg {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 12px;
+  }
+
+  /* ── Main App Layout ── */
+  .app { display: none; min-height: 100vh; }
+  .app.active { display: block; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-right { display: flex; gap: 8px; }
+
+  .main-content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 28px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Module Grid ── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .module-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: default;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .module-card:hover {
+    border-color: rgba(99,102,241,0.3);
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  .module-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .module-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .module-card-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .module-card:hover .module-card-actions { opacity: 1; }
+
+  .module-card-actions button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+
+  .module-card-actions button:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+  }
+
+  .module-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: -0.2px;
+  }
+
+  .module-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .module-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(99,102,241,0.1);
+    color: var(--accent-hover);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.3px;
+  }
+
+  .tag.tag-green { background: rgba(52,211,153,0.1); color: var(--success); }
+  .tag.tag-yellow { background: rgba(251,191,36,0.1); color: var(--warning); }
+
+  .module-card .btn-primary {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    margin-top: 0;
+  }
+
+  /* ── Add Module Card ── */
+  .add-card {
+    border: 2px dashed var(--border);
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    cursor: pointer;
+    transition: all 0.25s;
+    gap: 8px;
+  }
+
+  .add-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    transform: translateY(-2px);
+  }
+
+  .add-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+
+  .add-card:hover .add-card-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .add-card span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg-surface);
+    z-index: 1;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .modal-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .modal-body { padding: 24px; }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--border-focus);
+  }
+  .field textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+  .field select { cursor: pointer; }
+  .field .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .checkbox-row input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-input);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .checkbox-row input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checkbox-row input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .checkbox-row label {
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-primary);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .permissions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 16px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* ── Status Indicator ── */
+  .sw-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .sw-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  .sw-dot.active { background: var(--success); box-shadow: 0 0 6px rgba(52,211,153,0.5); }
+
+  /* ── Toast ── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.25s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .toast.success { border-color: rgba(52,211,153,0.3); }
+  .toast.error { border-color: rgba(248,113,113,0.3); }
+
+  @keyframes slideIn {
+    from { transform: translateX(40px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .module-grid { grid-template-columns: 1fr; }
+    .lock-card { margin: 16px; padding: 32px 24px; }
+    .permissions-grid { grid-template-columns: 1fr; }
+    .topbar { padding: 12px 16px; }
+    .main-content { padding: 20px 16px; }
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ────── LOCK SCREEN ────── -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon">⬡</div>
+    <h1>Sandbox Launcher</h1>
+    <p id="lockSubtext">Create a password to encrypt your modules</p>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="lockPassword" placeholder="Enter password" autofocus>
+    </div>
+    <div class="input-group" id="confirmGroup">
+      <label>Confirm Password</label>
+      <input type="password" id="lockConfirm" placeholder="Confirm password">
+    </div>
+    <button class="btn btn-primary" id="lockBtn" onclick="handleLock()">Create Vault</button>
+    <div class="error-msg" id="lockError"></div>
+    <div class="hint-msg">AES-256-GCM encryption · Data stored locally</div>
+  </div>
+</div>
+
+<!-- ────── MAIN APP ────── -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">⬡</div>
+      <span class="topbar-title">Sandbox</span>
+    </div>
+    <div class="topbar-right">
+      <div class="sw-status">
+        <div class="sw-dot" id="swDot"></div>
+        <span id="swLabel">SW: inactive</span>
+      </div>
+      <button class="btn-icon" title="Lock" onclick="lockApp()">🔒</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="section-title">Installed Modules</div>
+    <div class="module-grid" id="moduleGrid">
+      <!-- Modules render here -->
+    </div>
+  </div>
+</div>
+
+<!-- ────── MODULE CONFIG MODAL ────── -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Module Configuration</h2>
+      <button class="btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Rendered dynamically -->
+    </div>
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="modalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ────── TOAST CONTAINER ────── -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  Crypto Utilities (AES-256-GCM)
+// ═══════════════════════════════════════════
+
+const SALT_KEY = 'sandbox_salt';
+const VAULT_KEY = 'sandbox_vault';
+const CHECK_KEY = 'sandbox_check';
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encrypt(data, key) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(JSON.stringify(data))
+  );
+  return { iv: Array.from(iv), ct: Array.from(new Uint8Array(ciphertext)) };
+}
+
+async function decrypt(bundle, key) {
+  const iv = new Uint8Array(bundle.iv);
+  const ct = new Uint8Array(bundle.ct);
+  const plaintext = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv }, key, ct
+  );
+  return JSON.parse(new TextDecoder().decode(plaintext));
+}
+
+// ═══════════════════════════════════════════
+//  App State
+// ═══════════════════════════════════════════
+
+let cryptoKey = null;
+let modules = {};  // id -> module config
+let swReady = false;
+
+// ═══════════════════════════════════════════
+//  Lock Screen
+// ═══════════════════════════════════════════
+
+function initLockScreen() {
+  const hasVault = localStorage.getItem(VAULT_KEY);
+  const confirmGroup = document.getElementById('confirmGroup');
+  const lockBtn = document.getElementById('lockBtn');
+  const lockSubtext = document.getElementById('lockSubtext');
+
+  if (hasVault) {
+    confirmGroup.style.display = 'none';
+    lockBtn.textContent = 'Unlock';
+    lockSubtext.textContent = 'Enter your password to decrypt modules';
+  } else {
+    confirmGroup.style.display = '';
+    lockBtn.textContent = 'Create Vault';
+    lockSubtext.textContent = 'Create a password to encrypt your modules';
+  }
+
+  document.getElementById('lockPassword').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (hasVault) handleLock();
+      else document.getElementById('lockConfirm').focus();
+    }
+  });
+  document.getElementById('lockConfirm').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLock();
+  });
+}
+
+async function handleLock() {
+  const pw = document.getElementById('lockPassword').value;
+  const confirm = document.getElementById('lockConfirm').value;
+  const errEl = document.getElementById('lockError');
+  const hasVault = localStorage.getItem(VAULT_KEY);
+
+  errEl.textContent = '';
+
+  if (!pw) { errEl.textContent = 'Password required'; return; }
+
+  if (hasVault) {
+    // Decrypt existing vault
+    try {
+      const salt = new Uint8Array(JSON.parse(localStorage.getItem(SALT_KEY)));
+      cryptoKey = await deriveKey(pw, salt);
+      const vault = JSON.parse(localStorage.getItem(VAULT_KEY));
+      modules = await decrypt(vault, cryptoKey);
+      unlockApp();
+    } catch (e) {
+      errEl.textContent = 'Wrong password';
+    }
+  } else {
+    // Create new vault
+    if (pw.length < 4) { errEl.textContent = 'Minimum 4 characters'; return; }
+    if (pw !== confirm) { errEl.textContent = 'Passwords don\'t match'; return; }
+
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    localStorage.setItem(SALT_KEY, JSON.stringify(Array.from(salt)));
+    cryptoKey = await deriveKey(pw, salt);
+    modules = {};
+    await saveVault();
+    unlockApp();
+  }
+}
+
+async function saveVault() {
+  if (!cryptoKey) return;
+  const encrypted = await encrypt(modules, cryptoKey);
+  localStorage.setItem(VAULT_KEY, JSON.stringify(encrypted));
+}
+
+function unlockApp() {
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('lockPassword').value = '';
+  document.getElementById('lockConfirm').value = '';
+  renderModules();
+  syncModulesToSW();
+}
+
+function lockApp() {
+  cryptoKey = null;
+  modules = {};
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('lockScreen').style.display = '';
+  initLockScreen();
+  toast('Launcher locked', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  Service Worker
+// ═══════════════════════════════════════════
+
+async function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    updateSWStatus(false, 'unsupported');
+    return;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.register('sw.js', { scope: '/' });
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data.type === 'module-registered') {
+        console.log('[SW] Module registered:', event.data.id);
+      }
+    });
+
+    // Wait for active SW
+    const sw = reg.active || reg.waiting || reg.installing;
+    if (sw?.state === 'activated') {
+      swReady = true;
+      updateSWStatus(true, 'active');
+    }
+
+    if (reg.installing) {
+      reg.installing.addEventListener('statechange', function () {
+        if (this.state === 'activated') {
+          swReady = true;
+          updateSWStatus(true, 'active');
+        }
+      });
+    }
+
+    // Also handle controller change (first install requires reload)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      swReady = true;
+      updateSWStatus(true, 'active');
+    });
+
+    if (navigator.serviceWorker.controller) {
+      swReady = true;
+      updateSWStatus(true, 'active');
+    }
+  } catch (e) {
+    console.error('[SW] Registration failed:', e);
+    updateSWStatus(false, 'error');
+  }
+}
+
+function updateSWStatus(active, label) {
+  document.getElementById('swDot').classList.toggle('active', active);
+  document.getElementById('swLabel').textContent = `SW: ${label}`;
+}
+
+function sendToSW(type, payload) {
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type, payload });
+  }
+}
+
+async function syncModulesToSW() {
+  for (const [id, mod] of Object.entries(modules)) {
+    sendToSW('register-module', { id, config: mod });
+  }
+}
+
+// ═══════════════════════════════════════════
+//  Module Management
+// ═══════════════════════════════════════════
+
+function generateId() {
+  return 'mod_' + crypto.getRandomValues(new Uint8Array(6)).reduce(
+    (s, b) => s + b.toString(16).padStart(2, '0'), ''
+  );
+}
+
+async function addModuleFromFolder() {
+  if (!('showDirectoryPicker' in window)) {
+    toast('Your browser doesn\'t support the folder picker API', 'error');
+    return;
+  }
+
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+    const files = {};
+    let manifest = null;
+
+    // Read all files recursively
+    await readDirectory(dirHandle, '', files);
+
+    // Look for module.json
+    if (files['module.json']) {
+      try {
+        manifest = JSON.parse(files['module.json'].text);
+      } catch (e) {
+        toast('Invalid module.json', 'error');
+        return;
+      }
+    }
+
+    // If no manifest, create a basic one
+    if (!manifest) {
+      const hasIndex = files['index.html'];
+      if (!hasIndex) {
+        toast('No index.html or module.json found', 'error');
+        return;
+      }
+      manifest = {
+        name: dirHandle.name,
+        entry: 'index.html',
+        description: 'Imported module',
+        headers: {},
+        permissions: {},
+        network: {},
+        storage: { quota: '100MB' }
+      };
+    }
+
+    const id = generateId();
+    manifest._id = id;
+    manifest._fileList = Object.keys(files);
+    manifest._icon = manifest.icon || '📦';
+    modules[id] = manifest;
+
+    // Send files to Service Worker
+    sendToSW('register-module', { id, config: manifest });
+
+    for (const [path, fileData] of Object.entries(files)) {
+      sendToSW('store-module-file', {
+        moduleId: id,
+        path,
+        data: fileData.content,
+        contentType: fileData.type,
+      });
+    }
+
+    await saveVault();
+    renderModules();
+    toast(`"${manifest.name}" installed`, 'success');
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      console.error(e);
+      toast('Failed to import module', 'error');
+    }
+  }
+}
+
+async function readDirectory(dirHandle, basePath, files) {
+  for await (const [name, handle] of dirHandle) {
+    const path = basePath ? `${basePath}/${name}` : name;
+    if (handle.kind === 'file') {
+      const file = await handle.getFile();
+      const text = await file.text();
+      // For binary files, store as ArrayBuffer
+      const isBinary = /\.(wasm|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|bin|dat|zip|mp3|wav|mp4|webm)$/i.test(name);
+      files[path] = {
+        text,
+        content: isBinary ? await file.arrayBuffer() : text,
+        type: file.type || 'application/octet-stream',
+      };
+    } else if (handle.kind === 'directory') {
+      await readDirectory(handle, path, files);
+    }
+  }
+}
+
+function removeModule(id) {
+  const name = modules[id]?.name || 'Module';
+  if (!confirm(`Remove "${name}"? This will delete all associated data.`)) return;
+  sendToSW('unregister-module', { id });
+  delete modules[id];
+  saveVault();
+  renderModules();
+  toast(`"${name}" removed`, 'success');
+}
+
+function launchModule(id) {
+  const mod = modules[id];
+  if (!mod) return;
+
+  if (!swReady) {
+    toast('Service Worker not ready. Try reloading the page.', 'error');
+    return;
+  }
+
+  const url = `/module/${id}/`;
+
+  // Open module — if it needs isolation (COOP), must open in new window
+  if (mod.permissions?.shared_array_buffer || mod.headers?.['Cross-Origin-Opener-Policy']) {
+    window.open(url, '_blank');
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  Module Config Modal
+// ═══════════════════════════════════════════
+
+function openConfig(id) {
+  const mod = modules[id];
+  if (!mod) return;
+
+  document.getElementById('modalTitle').textContent = `Configure: ${mod.name}`;
+
+  const permList = [
+    ['shared_array_buffer', 'SharedArrayBuffer'],
+    ['webgpu', 'WebGPU'],
+    ['web_audio', 'Web Audio'],
+    ['gamepad', 'Gamepad API'],
+    ['pointer_lock', 'Pointer Lock'],
+    ['fullscreen', 'Fullscreen'],
+    ['persistent_storage', 'Persistent Storage'],
+    ['clipboard', 'Clipboard'],
+    ['camera', 'Camera'],
+    ['microphone', 'Microphone'],
+  ];
+
+  const perms = mod.permissions || {};
+  const headers = mod.headers || {};
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="field">
+      <label>Module Name</label>
+      <input id="cfg_name" value="${esc(mod.name || '')}">
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <input id="cfg_desc" value="${esc(mod.description || '')}">
+    </div>
+    <div class="field">
+      <label>Entry File</label>
+      <input id="cfg_entry" value="${esc(mod.entry || 'index.html')}">
+      <div class="hint">Main HTML file to load</div>
+    </div>
+    <div class="field">
+      <label>Icon (emoji)</label>
+      <input id="cfg_icon" value="${esc(mod._icon || '📦')}" maxlength="4" style="width:80px">
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title" style="margin-top:0">Response Headers</div>
+
+    <div class="field">
+      <label>Cross-Origin-Opener-Policy</label>
+      <select id="cfg_coop">
+        <option value="">None</option>
+        <option value="same-origin" ${headers['Cross-Origin-Opener-Policy']==='same-origin'?'selected':''}>same-origin</option>
+        <option value="same-origin-allow-popups" ${headers['Cross-Origin-Opener-Policy']==='same-origin-allow-popups'?'selected':''}>same-origin-allow-popups</option>
+        <option value="unsafe-none" ${headers['Cross-Origin-Opener-Policy']==='unsafe-none'?'selected':''}>unsafe-none</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Cross-Origin-Embedder-Policy</label>
+      <select id="cfg_coep">
+        <option value="">None</option>
+        <option value="require-corp" ${headers['Cross-Origin-Embedder-Policy']==='require-corp'?'selected':''}>require-corp</option>
+        <option value="credentialless" ${headers['Cross-Origin-Embedder-Policy']==='credentialless'?'selected':''}>credentialless</option>
+      </select>
+    </div>
+
+    <div class="field" id="customHeadersField">
+      <label>Custom Headers (JSON)</label>
+      <textarea id="cfg_customHeaders" rows="3" placeholder='{"X-Custom": "value"}'>${esc(JSON.stringify(
+        Object.fromEntries(Object.entries(headers).filter(([k]) =>
+          !['Cross-Origin-Opener-Policy','Cross-Origin-Embedder-Policy'].includes(k)
+        )),
+        null, 2
+      ))}</textarea>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title" style="margin-top:0">Permissions</div>
+    <div class="permissions-grid">
+      ${permList.map(([key, label]) => `
+        <div class="checkbox-row">
+          <input type="checkbox" id="perm_${key}" ${perms[key] ? 'checked' : ''}>
+          <label for="perm_${key}">${label}</label>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title" style="margin-top:0">Network</div>
+    <div class="field">
+      <label>TCP Proxy URL</label>
+      <input id="cfg_proxy" value="${esc(mod.network?.tcp_proxy || '')}" placeholder="https://your-worker.workers.dev">
+      <div class="hint">Cloudflare Worker or similar TCP relay</div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="cfg_tailscale" ${mod.network?.tailscale ? 'checked' : ''}>
+      <label for="cfg_tailscale">Enable Tailscale networking</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="cfg_webrtc" ${mod.network?.webrtc ? 'checked' : ''}>
+      <label for="cfg_webrtc">Enable WebRTC</label>
+    </div>
+
+    <div class="divider"></div>
+    <div class="field">
+      <label>Files in module</label>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-muted); max-height:120px; overflow-y:auto; padding:8px; background:var(--bg-input); border-radius:var(--radius-sm); border:1px solid var(--border)">
+        ${(mod._fileList || []).map(f => `<div style="padding:2px 0">${esc(f)}</div>`).join('') || '<div>No files stored</div>'}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modalSave').onclick = () => saveConfig(id);
+  document.getElementById('configModal').classList.add('open');
+}
+
+function saveConfig(id) {
+  const mod = modules[id];
+  if (!mod) return;
+
+  mod.name = document.getElementById('cfg_name').value || mod.name;
+  mod.description = document.getElementById('cfg_desc').value || '';
+  mod.entry = document.getElementById('cfg_entry').value || 'index.html';
+  mod._icon = document.getElementById('cfg_icon').value || '📦';
+
+  // Headers
+  const headers = {};
+  const coop = document.getElementById('cfg_coop').value;
+  const coep = document.getElementById('cfg_coep').value;
+  if (coop) headers['Cross-Origin-Opener-Policy'] = coop;
+  if (coep) headers['Cross-Origin-Embedder-Policy'] = coep;
+
+  try {
+    const custom = JSON.parse(document.getElementById('cfg_customHeaders').value || '{}');
+    Object.assign(headers, custom);
+  } catch (e) {}
+
+  mod.headers = headers;
+
+  // Permissions
+  const permKeys = [
+    'shared_array_buffer','webgpu','web_audio','gamepad',
+    'pointer_lock','fullscreen','persistent_storage',
+    'clipboard','camera','microphone'
+  ];
+  mod.permissions = {};
+  for (const key of permKeys) {
+    const el = document.getElementById(`perm_${key}`);
+    if (el?.checked) mod.permissions[key] = true;
+  }
+
+  // Network
+  mod.network = {
+    tcp_proxy: document.getElementById('cfg_proxy').value || '',
+    tailscale: document.getElementById('cfg_tailscale').checked,
+    webrtc: document.getElementById('cfg_webrtc').checked,
+  };
+
+  // Re-register with SW
+  sendToSW('register-module', { id, config: mod });
+
+  saveVault();
+  renderModules();
+  closeModal();
+  toast('Configuration saved', 'success');
+}
+
+function closeModal() {
+  document.getElementById('configModal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+//  Rendering
+// ═══════════════════════════════════════════
+
+const ICON_COLORS = [
+  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #06b6d4, #3b82f6)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #10b981, #059669)',
+  'linear-gradient(135deg, #ec4899, #8b5cf6)',
+  'linear-gradient(135deg, #f97316, #facc15)',
+];
+
+function renderModules() {
+  const grid = document.getElementById('moduleGrid');
+  const entries = Object.entries(modules);
+
+  let html = '';
+
+  entries.forEach(([id, mod], i) => {
+    const colorIdx = i % ICON_COLORS.length;
+    const icon = mod._icon || '📦';
+    const tags = [];
+
+    if (mod.permissions?.shared_array_buffer) tags.push('<span class="tag">SAB</span>');
+    if (mod.permissions?.webgpu) tags.push('<span class="tag">WebGPU</span>');
+    if (mod.permissions?.fullscreen) tags.push('<span class="tag tag-green">Fullscreen</span>');
+    if (mod.network?.tailscale) tags.push('<span class="tag tag-yellow">Tailscale</span>');
+
+    html += `
+      <div class="module-card">
+        <div class="module-card-header">
+          <div class="module-icon-wrap" style="background:${ICON_COLORS[colorIdx]}">
+            ${icon}
+          </div>
+          <div class="module-card-actions">
+            <button onclick="openConfig('${id}')" title="Configure">⚙</button>
+            <button onclick="removeModule('${id}')" title="Remove">✕</button>
+          </div>
+        </div>
+        <div class="module-name">${esc(mod.name || 'Untitled')}</div>
+        <div class="module-desc">${esc(mod.description || 'No description')}</div>
+        <div class="module-tags">${tags.join('')}</div>
+        <button class="btn btn-primary" onclick="launchModule('${id}')">Launch</button>
+      </div>
+    `;
+  });
+
+  // Add Module card
+  html += `
+    <div class="module-card add-card" onclick="addModuleFromFolder()">
+      <div class="add-card-icon">+</div>
+      <span>Add Module from Folder</span>
+    </div>
+  `;
+
+  grid.innerHTML = html;
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════
+//  Toast Notifications
+// ═══════════════════════════════════════════
+
+function toast(message, type = 'info') {
+  const container = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: '✓', error: '✗', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type] || ''}</span> ${esc(message)}`;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(40px)';
+    el.style.transition = 'all 0.3s';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
+// ═══════════════════════════════════════════
+//  Modal click-outside-to-close
+// ═══════════════════════════════════════════
+
+document.getElementById('configModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ═══════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════
+
+initLockScreen();
+initServiceWorker();
+</script>
+
+</body>
+</html>
